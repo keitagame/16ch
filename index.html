@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>２ちゃんねる - 匿名掲示板</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #e8e0d4;
+    --sidebar-bg: #f0ebe3;
+    --main-bg: #f8f5f0;
+    --border: #c8b89a;
+    --header-bg: #8b7355;
+    --link: #0000cc;
+    --link-visited: #551a8b;
+    --link-hover: #cc0000;
+    --red: #cc0000;
+    --green: #006600;
+    --text: #111;
+    --post-num: #008000;
+    --post-name: #228b22;
+    --timestamp: #555;
+    --id-color: #333;
+    --thread-title: #cc0000;
+    --sidebar-cat: #cc0000;
+    --sidebar-subcat: #0000cc;
+    --input-border: #999;
+    --btn-bg: #d4c9b6;
+    --btn-border: #8b7355;
+    --quote: #aa5500;
+  }
+
+  body {
+    font-family: "MS PGothic", "ＭＳ Ｐゴシック", "Meiryo", "メイリオ", Osaka, sans-serif;
+    font-size: 13px;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* ===== TOP HEADER ===== */
+  #site-header {
+    background: var(--header-bg);
+    color: #fff;
+    padding: 4px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid #5c4a2a;
+  }
+  #site-header h1 {
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 4px;
+    color: #fff;
+    text-shadow: 1px 1px 2px #000;
+  }
+  #site-header .header-links {
+    font-size: 12px;
+  }
+  #site-header .header-links a {
+    color: #ffd;
+    text-decoration: none;
+    margin: 0 6px;
+  }
+  #site-header .header-links a:hover { text-decoration: underline; }
+
+  /* ===== SEARCH BAR ===== */
+  #search-bar {
+    background: #f0e8d8;
+    border-bottom: 1px solid var(--border);
+    padding: 3px 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+  }
+  #search-bar label { font-weight: bold; }
+  #search-bar input[type="text"] {
+    border: 1px solid var(--input-border);
+    padding: 2px 4px;
+    font-size: 12px;
+    width: 180px;
+    background: #fff;
+  }
+  #search-bar input[type="checkbox"] { margin: 0 2px; }
+  #search-bar select {
+    font-size: 12px;
+    border: 1px solid var(--input-border);
+    padding: 1px;
+    background: #fff;
+  }
+  #search-bar button {
+    background: var(--btn-bg);
+    border: 1px solid var(--btn-border);
+    padding: 2px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  #search-bar button:hover { background: #c4b9a6; }
+
+  /* ===== LAYOUT ===== */
+  #wrapper {
+    display: flex;
+    min-height: calc(100vh - 60px);
+  }
+
+  /* ===== SIDEBAR ===== */
+  #sidebar {
+    width: 140px;
+    min-width: 140px;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+  #sidebar .cat-title {
+    color: var(--sidebar-cat);
+    font-weight: bold;
+    font-size: 13px;
+    margin: 10px 0 3px 0;
+  }
+  #sidebar .cat-title:first-child { margin-top: 0; }
+  #sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 4px 0;
+  }
+  #sidebar ul li a {
+    color: var(--link);
+    text-decoration: none;
+    display: block;
+    padding: 1px 2px;
+    font-size: 12px;
+  }
+  #sidebar ul li a:visited { color: var(--link-visited); }
+  #sidebar ul li a:hover {
+    color: var(--red);
+    text-decoration: underline;
+  }
+
+  /* ===== MAIN CONTENT ===== */
+  #main {
+    flex: 1;
+    background: var(--main-bg);
+    padding: 10px 16px;
+    min-width: 0;
+  }
+
+  /* ===== PAGE NAV TABS ===== */
+  .page-nav {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    flex-wrap: wrap;
+  }
+  .page-nav a {
+    color: var(--link);
+    text-decoration: none;
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    background: #e8ddd0;
+  }
+  .page-nav a:hover { background: #d4c9b6; text-decoration: underline; }
+
+  /* ===== BOARD INDEX ===== */
+  .board-index-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--thread-title);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+  }
+  .board-welcome {
+    background: #fffff0;
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .board-welcome p { margin: 4px 0; }
+  .board-welcome a { color: var(--link); }
+
+  /* ===== THREAD LIST ===== */
+  .thread-list-header {
+    display: flex;
+    gap: 4px;
+    font-size: 11px;
+    background: #ddd5c4;
+    border: 1px solid var(--border);
+    padding: 3px 6px;
+    margin-bottom: 6px;
+  }
+  .thread-list-header span { color: #444; }
+  .thread-list-header a { color: var(--link); text-decoration: none; }
+  .thread-list-header a:hover { text-decoration: underline; }
+
+  .thread-list {
+    list-style: none;
+    border: 1px solid var(--border);
+    background: #fff;
+  }
+  .thread-list li {
+    border-bottom: 1px solid #e0d8cc;
+    padding: 3px 8px;
+    display: flex;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .thread-list li:hover { background: #f5f0e8; }
+  .thread-list li:last-child { border-bottom: none; }
+  .thread-num {
+    color: #666;
+    min-width: 30px;
+    text-align: right;
+  }
+  .thread-count {
+    color: #888;
+    min-width: 40px;
+  }
+  .thread-list a {
+    color: var(--link);
+    text-decoration: none;
+    flex: 1;
+  }
+  .thread-list a:visited { color: var(--link-visited); }
+  .thread-list a:hover { text-decoration: underline; color: var(--red); }
+
+  /* ===== THREAD VIEW ===== */
+  .thread-view-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .thread-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--thread-title);
+  }
+  .thread-count-badge {
+    font-size: 13px;
+    color: #555;
+  }
+  .be-check {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .be-check a { color: var(--link); text-decoration: underline; }
+  .badge {
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #fff;
+    border-radius: 2px;
+  }
+  .badge-2bp { background: #e8860a; }
+  .badge-brz { background: #cd7f32; }
+  .badge-plt { background: #aaa; }
+  .badge-dia { background: #29abe2; }
+  .badge-star { background: #e8c400; color: #333; }
+  .badge-sc  { background: #555; }
+
+  /* ===== POSTS ===== */
+  .posts { display: flex; flex-direction: column; gap: 0; }
+
+  .post {
+    border-bottom: 1px dashed var(--border);
+    padding: 8px 4px 8px 4px;
+    position: relative;
+  }
+  .post:last-of-type { border-bottom: none; }
+
+  .post-header {
+    margin-bottom: 4px;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .post-num {
+    color: var(--post-num);
+    font-weight: bold;
+    font-size: 13px;
+  }
+  .post-name {
+    color: var(--post-name);
+    font-weight: bold;
+  }
+  .post-mail a {
+    color: var(--post-name);
+    text-decoration: none;
+  }
+  .post-time {
+    color: var(--timestamp);
+    font-size: 12px;
+  }
+  .post-id {
+    color: var(--id-color);
+    font-size: 12px;
+  }
+  .post-body {
+    padding-left: 24px;
+    font-size: 13px;
+    line-height: 1.7;
+    word-break: break-all;
+  }
+  .post-body .anchor {
+    color: var(--quote);
+    text-decoration: none;
+  }
+  .post-body .anchor:hover { text-decoration: underline; }
+  .post-body p { margin: 2px 0; }
+
+  /* ===== REPLY FORM ===== */
+  .reply-form {
+    background: #f8f3ec;
+    border: 1px solid var(--border);
+    padding: 12px 14px;
+    margin-top: 14px;
+    margin-bottom: 14px;
+  }
+  .reply-form-title {
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+  }
+  .reply-form table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  .reply-form td {
+    padding: 3px 6px;
+    vertical-align: top;
+    font-size: 12px;
+  }
+  .reply-form td:first-child {
+    white-space: nowrap;
+    font-weight: bold;
+    color: #444;
+    width: 60px;
+  }
+  .reply-form input[type="text"],
+  .reply-form textarea {
+    border: 1px solid var(--input-border);
+    padding: 3px 5px;
+    font-size: 12px;
+    font-family: inherit;
+    background: #fff;
+    width: 100%;
+  }
+  .reply-form textarea {
+    width: 420px;
+    max-width: 100%;
+    height: 100px;
+    resize: vertical;
+  }
+  .reply-form input[name="name"] { width: 200px; }
+  .reply-form input[name="mail"] { width: 200px; }
+  .reply-form-submit {
+    margin-top: 6px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .submit-btn {
+    background: var(--btn-bg);
+    border: 1px solid var(--btn-border);
+    padding: 3px 18px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  .submit-btn:hover { background: #c4b9a6; }
+
+  /* ===== BOTTOM NAV ===== */
+  .bottom-nav {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    font-size: 13px;
+  }
+  .bottom-nav a {
+    color: var(--link);
+    text-decoration: none;
+    font-weight: bold;
+  }
+  .bottom-nav a:hover { text-decoration: underline; color: var(--red); }
+
+  /* ===== TABS (top page / thread toggle) ===== */
+  .view-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--header-bg);
+    margin-bottom: 14px;
+  }
+  .view-tab {
+    padding: 5px 14px;
+    font-size: 12px;
+    background: #ddd5c4;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--link);
+    margin-right: 2px;
+  }
+  .view-tab.active {
+    background: var(--main-bg);
+    color: #111;
+    font-weight: bold;
+    border-bottom: 2px solid var(--main-bg);
+    margin-bottom: -2px;
+    z-index: 1;
+    position: relative;
+  }
+  .view-tab:hover { background: #c8bfb0; }
+
+  /* Hidden toggle trick with radio buttons - no JS */
+  input[type="radio"].view-toggle { display: none; }
+
+  #tab-index:checked ~ #wrapper #view-index,
+  #tab-thread:checked ~ #wrapper #view-thread,
+  #tab-top:checked ~ #wrapper #view-top {
+    display: block;
+  }
+  #view-index, #view-thread, #view-top { display: none; }
+
+  label.view-tab { cursor: pointer; }
+
+  #tab-index:checked ~ #wrapper label[for="tab-index"],
+  #tab-thread:checked ~ #wrapper label[for="tab-thread"],
+  #tab-top:checked ~ #wrapper label[for="tab-top"] {
+    background: var(--main-bg);
+    color: #111;
+    font-weight: bold;
+    border-bottom: 2px solid var(--main-bg);
+    margin-bottom: -2px;
+    z-index: 1;
+    position: relative;
+  }
+
+  /* Default: show index */
+  #tab-index:checked ~ #wrapper #view-index { display: block; }
+  #tab-thread:checked ~ #wrapper #view-thread { display: block; }
+  #tab-top:checked ~ #wrapper #view-top { display: block; }
+
+  /* ===== MARQUEE-STYLE TICKER ===== */
+  .ticker {
+    background: #ffffcc;
+    border: 1px solid #cccc00;
+    padding: 2px 8px;
+    font-size: 11px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  /* ===== SEPARATORS ===== */
+  hr { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+</style>
+</head>
+<body>
+
+<!-- Radio buttons for tab state -->
+<input type="radio" name="view" id="tab-top" checked>
+<input type="radio" name="view" id="tab-index">
+<input type="radio" name="view" id="tab-thread">
+
+<!-- Site Header -->
+<div id="site-header">
+  <h1>２ちゃんねる</h1>
+  <div class="header-links">
+    <a href="#">TOP</a> —
+    <a href="#">GUIDE</a> —
+    <a href="#">FAQ</a>
+  </div>
+</div>
+
+<!-- Search Bar -->
+<div id="search-bar">
+  <label>２ちゃんねる</label>
+  <input type="text" placeholder="検索語">
+  <select>
+    <option>スレタイ</option>
+    <option>本文</option>
+  </select>
+  <button type="button">検索</button>
+  <span style="margin-left:6px; color:#555;">検索設定</span>
+  <span style="margin-left:6px; color:#888; font-size:11px;">本文検索や検索設定をするには<a href="#" style="color:var(--link);">ログイン</a>が必要です</span>
+</div>
+
+<!-- Ticker -->
+<div class="ticker">
+  ＊ ベータテスト中です。システムを一から作ったり、手直ししたりで、十分にテストは出来てないので、壊れたり、荒れたりすると思いますが、ネットのサービスってそんなもんなんで、まあ、気にせずにお楽しみください。
+</div>
+
+<!-- Main Layout -->
+<div id="wrapper">
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div class="cat-title">パソコン</div>
+    <ul>
+      <li><a href="#">OS</a></li>
+      <li><a href="#">デスクトップ</a></li>
+      <li><a href="#">パソコン一般</a></li>
+      <li><a href="#">ノートPC</a></li>
+      <li><a href="#">自作PC</a></li>
+      <li><a href="#">プリンタ</a></li>
+      <li><a href="#">ハードウェア</a></li>
+      <li><a href="#">CD-R,DVD</a></li>
+      <li><a href="#">ソフトウェア</a></li>
+      <li><a href="#">モバイル</a></li>
+      <li><a href="#">ビジネスsoft</a></li>
+      <li><a href="#">UNIX</a></li>
+      <li><a href="#">データベース</a></li>
+      <li><a href="#">Linux</a></li>
+      <li><a href="#">プログラマー</a></li>
+      <li><a href="#">プログラム</a></li>
+      <li><a href="#">ＣＧ</a></li>
+      <li><a href="#">DTM</a></li>
+      <li><a href="#">DTV</a></li>
+      <li><a href="#">FLASH</a></li>
+      <li><a href="#">ゲ製作技術</a></li>
+      <li><a href="#">昔のPC</a></li>
+    </ul>
+
+    <div class="cat-title">ネット関係</div>
+    <ul>
+      <li><a href="#">インターネット</a></li>
+      <li><a href="#">Download</a></li>
+      <li><a href="#">Web制作</a></li>
+      <li><a href="#">Web収入</a></li>
+      <li><a href="#">レンタル鯖</a></li>
+      <li><a href="#">プロバイダー</a></li>
+      <li><a href="#">セキュリティ</a></li>
+    </ul>
+
+    <div class="cat-title">２ちゃんねる</div>
+    <ul>
+      <li><a href="#">2chの入り口</a></li>
+      <li><a href="#">2ch総合案内</a></li>
+      <li><a href="#">２ちゃんねる検索</a></li>
+      <li><a href="#">スマホ入り口</a></li>
+    </ul>
+
+    <div class="cat-title">ベータテスト</div>
+    <ul>
+      <li><a href="#">運営事務所</a></li>
+      <li><a href="#">テスト用野原広場</a></li>
+      <li><a href="#">be</a></li>
+      <li><a href="#">新着ヘッドライン</a></li>
+    </ul>
+
+    <div class="cat-title">地震</div>
+    <ul>
+      <li><a href="#">地震速報</a></li>
+      <li><a href="#">臨時地震</a></li>
+      <li><a href="#">臨時地震＋</a></li>
+      <li><a href="#">緊急自然災害</a></li>
+    </ul>
+
+    <div class="cat-title">ニュース</div>
+    <ul>
+      <li><a href="#">ニュース速報α</a></li>
+      <li><a href="#">芸スポα</a></li>
+      <li><a href="#">なんでも質問</a></li>
+      <li><a href="#">朝生</a></li>
+    </ul>
+  </div>
+
+  <!-- Main Content -->
+  <div id="main">
+
+    <!-- Tab Navigation -->
+    <div class="view-tabs">
+      <label for="tab-top" class="view-tab">掲示板トップ</label>
+      <label for="tab-index" class="view-tab">スレッド一覧</label>
+      <label for="tab-thread" class="view-tab">スレッドを読む</label>
+    </div>
+
+    <!-- VIEW: TOP PAGE -->
+    <div id="view-top">
+      <div class="board-welcome">
+        <p style="font-size:15px; font-weight:bold; margin-bottom:8px;">「ハッキング」から「今晩のおかず」までを手広くカバーする巨大掲示板群<br>『２ちゃんねる』へようこそ！</p>
+        <p>『２ちゃんねる』って何？という方は<a href="#">インフォメーション</a>をご覧ください。</p>
+      </div>
+      <hr>
+      <div class="board-welcome" style="margin-top:10px;">
+        <p>そんなわけで、ベータテスト中です。</p>
+        <p>システムを一から作ったり、手直ししたりで、十分にテストは出来てないので、壊れたり、荒れたりすると思いますが、ネットのサービスってそんなもんなんで、まぁ、気にせずにお楽しみください。</p>
+      </div>
+      <hr>
+      <p style="font-size:12px; margin-top:8px;">ぶっ壊れたとか、書けないとか、5月病とかの不具合の報告は → <a href="#">http://sweet.2ch.sc/laplace/</a></p>
+    </div>
+
+    <!-- VIEW: THREAD INDEX -->
+    <div id="view-index">
+      <div class="thread-list-header">
+        <span>全部 | 1-100 | 最新50 | 新着順</span>
+        <span style="margin-left:auto;"><a href="#">板のトップに戻る</a></span>
+      </div>
+
+      <p style="font-size:13px; font-weight:bold; color:var(--thread-title); margin-bottom:6px;">ソフトウェア板 スレッド一覧</p>
+
+      <ol class="thread-list">
+        <li>
+          <span class="thread-num">1</span>
+          <span class="thread-count">[94]</span>
+          <a href="#" onclick="document.getElementById('tab-thread').checked=true; return false;">軽いWebブラウザを教えて</a>
+        </li>
+        <li>
+          <span class="thread-num">2</span>
+          <span class="thread-count">[234]</span>
+          <a href="#">フリーのテキストエディタについて語るスレ Part.12</a>
+        </li>
+        <li>
+          <span class="thread-num">3</span>
+          <span class="thread-count">[89]</span>
+          <a href="#">Windows11 不具合情報まとめ</a>
+        </li>
+        <li>
+          <span class="thread-num">4</span>
+          <span class="thread-count">[512]</span>
+          <a href="#">VSCode vs Vim vs Emacs 永遠の戦い Part.55</a>
+        </li>
+        <li>
+          <span class="thread-num">5</span>
+          <span class="thread-count">[67]</span>
+          <a href="#">【無料】おすすめVPNソフト教えて</a>
+        </li>
+        <li>
+          <span class="thread-num">6</span>
+          <span class="thread-count">[188]</span>
+          <a href="#">動画編集ソフト何使ってる？ Part.8</a>
+        </li>
+        <li>
+          <span class="thread-num">7</span>
+          <span class="thread-count">[321]</span>
+          <a href="#">Adobe製品の代替フリーソフトを探すスレ</a>
+        </li>
+        <li>
+          <span class="thread-num">8</span>
+          <span class="thread-count">[44]</span>
+          <a href="#">【質問】古いPCでも動くブラウザ2024</a>
+        </li>
+        <li>
+          <span class="thread-num">9</span>
+          <span class="thread-count">[156]</span>
+          <a href="#">パスワードマネージャーおすすめ教えて</a>
+        </li>
+        <li>
+          <span class="thread-num">10</span>
+          <span class="thread-count">[77]</span>
+          <a href="#">Linux Mint使ってる人のスレ Part.3</a>
+        </li>
+        <li>
+          <span class="thread-num">11</span>
+          <span class="thread-count">[203]</span>
+          <a href="#">Windowsの起動を速くする方法</a>
+        </li>
+        <li>
+          <span class="thread-num">12</span>
+          <span class="thread-count">[98]</span>
+          <a href="#">PDF編集ソフトのおすすめ</a>
+        </li>
+      </ol>
+
+      <div class="bottom-nav">
+        <a href="#">全部読む</a>
+        <a href="#">最新50</a>
+        <a href="#">1-100</a>
+        <a href="#">板のトップ</a>
+        <a href="#">リロード</a>
+      </div>
+    </div>
+
+    <!-- VIEW: THREAD DETAIL -->
+    <div id="view-thread">
+
+      <!-- Thread Header -->
+      <div class="thread-view-header">
+        <div>
+          <span class="thread-count-badge">[3:94]</span>
+          <span class="thread-title">　軽いWebブラウザを教えて</span>
+        </div>
+        <div class="be-check">
+          <a href="#">be</a>チェック
+          <span class="badge badge-2bp">2BP</span>
+          <span class="badge badge-brz">BRZ</span>
+          <span class="badge badge-plt">PLT</span>
+          <span class="badge badge-dia">DIA</span>
+          <span class="badge badge-star">S★</span>
+          <span class="badge badge-sc">.sc のみ</span>
+        </div>
+      </div>
+
+      <!-- Posts -->
+      <div class="posts">
+
+        <div class="post">
+          <div class="post-header">
+            <span class="post-num">1</span>
+            <span>名前：</span>
+            <span class="post-name"><a href="#" style="color:var(--post-name); text-decoration:none;">login:Penguin</a></span>
+            <span class="post-time">：2017/03/30(木) 12:39:31<small>.20</small></span>
+            <span class="post-id">ID:ankewFGx.net</span>
+          </div>
+          <div class="post-body">
+            <p>動画もサクサク見れるブラウザを教えてください。</p>
+            <p>&nbsp;</p>
+            <p>今は、LinuxBeanでFireFoxを使ってます。</p>
+          </div>
+        </div>
+
+        <div class="post">
+          <div class="post-header">
+            <span class="post-num">2</span>
+            <span>名前：</span>
+            <span class="post-name">login:Penguin</span>
+            <span class="post-time">：2017/03/30(木) 12:45:10<small>.33</small></span>
+            <span class="post-id">ID:bXjqPmNz.net</span>
+          </div>
+          <div class="post-body">
+            <p>ChromiumかPaleMoonでいいんじゃね</p>
+            <p>どっちもFirefoxより軽い</p>
+          </div>
+        </div>
+
+        <div class="post">
+          <div class="post-header">
+            <span class="post-num">3</span>
+            <span>名前：</span>
+            <span class="post-name">login:Penguin</span>
+            <span class="post-time">：2017/03/30(木) 13:02:55<small>.71</small></span>
+            <span class="post-id">ID:kWvTpLmR.net</span>
+          </div>
+          <div class="post-body">
+            <p><a href="#" class="anchor">&gt;&gt;2</a></p>
+            <p>PaleMoon使ってたけど最近重くなってきた気がする</p>
+            <p>Midoriとかどうよ？超軽いよ</p>
+          </div>
+        </div>
+
+        <div class="post">
+          <div class="post-header">
+            <span class="post-num">85</span>
+            <span>名前：</span>
+            <span class="post-name">login:Penguin</span>
+            <span class="post-time">：2024/08/16(金) 01:33:13<small>.80</small></span>
+            <span class="post-id">ID:A6O6ydAr.net</span>
+          </div>
+          <div class="post-body">
+            <p>下の時だけ発揮されるからヲチしてみて</p>
+            <p>くんにじゃない</p>
+          </div>
+        </div>
+
+        <div class="post">
+          <div class="post-header">
+            <span class="post-num">86</span>
+            <span>名前：</span>
+            <span class="post-name">login:Penguin</span>
+            <span class="post-time">：2024/08/16(金) 01:36:48<small>.78</small></span>
+            <span class="post-id">ID:MZVSFk0E.net</span>
+          </div>
+          <div class="post-body">
+            <p><a href="#" class="anchor">&gt;&gt;50</a></p>
+            <p>中継ぎ投稿が抑えてるので</p>
+          </div>
+        </div>
+
+        <div class="post">
+          <div class="post-header">
+            <span class="post-num">87</span>
+            <span>名前：</span>
+            <span class="post-name">login:Penguin</span>
+            <span class="post-time">：2024/08/16(金) 02:16:49<small>.52</small></span>
+            <span class="post-id">ID:ivbgpwtR.net</span>
+          </div>
+          <div class="post-body">
+            <p>俺は個別だけど</p>
+            <p>自覚症状あるなら行くな</p>
+          </div>
+        </div>
+
+        <div class="post">
+          <div class="post-header">
+            <span class="post-num">88</span>
+            <span>名前：</span>
+            <span class="post-name">login:Penguin</span>
+            <span class="post-time">：2024/08/17(土) 23:27:02<small>.88</small></span>
+            <span class="post-id">ID:RaaynJdq.net</span>
+          </div>
+          <div class="post-body">
+            <p>差し押さえして貰うね</p>
+            <p>普段から何かに依存しないと駄目だろ</p>
+          </div>
+        </div>
+
+        <div class="post">
+          <div class="post-header">
+            <span class="post-num">89</span>
+            <span>名前：</span>
+            <span class="post-name"><a href="#" style="color:var(--post-name); text-decoration:none;" title="sage">login:Penguin</a></span>
+            <span class="post-time">：2024/08/18(日) 00:44:17<small>.12</small></span>
+            <span class="post-id">ID:qTpLvNwX.net</span>
+          </div>
+          <div class="post-body">
+            <p>NetSurf試したことあるか？古いPCだとかなり速い</p>
+            <p>HTML5は微妙だけど動画サイト以外なら十分使えるぞ</p>
+          </div>
+        </div>
+
+        <div class="post">
+          <div class="post-header">
+            <span class="post-num">90</span>
+            <span>名前：</span>
+            <span class="post-name">login:Penguin</span>
+            <span class="post-time">：2024/08/18(日) 08:55:31<small>.04</small></span>
+            <span class="post-id">ID:hYbcMqTe.net</span>
+          </div>
+          <div class="post-body">
+            <p><a href="#" class="anchor">&gt;&gt;89</a></p>
+            <p>結局YouTubeとかニコ動見たいならChromium系一択なんだよな…</p>
+            <p>RAM 4GB以上あるならFirefox ESRで問題ない</p>
+          </div>
+        </div>
+
+        <div class="post">
+          <div class="post-header">
+            <span class="post-num">91</span>
+            <span>名前：</span>
+            <span class="post-name">login:Penguin</span>
+            <span class="post-time">：2024/08/19(月) 14:23:08<small>.66</small></span>
+            <span class="post-id">ID:zKpJsNaC.net</span>
+          </div>
+          <div class="post-body">
+            <p>Falkonはどうだ　KDE製だけど他のDEでも動く</p>
+            <p>QtWebEngineベースでメモリ使用量そこそこ少ない</p>
+          </div>
+        </div>
+
+        <div class="post">
+          <div class="post-header">
+            <span class="post-num">92</span>
+            <span>名前：</span>
+            <span class="post-name">login:Penguin</span>
+            <span class="post-time">：2024/08/20(火) 21:09:44<small>.31</small></span>
+            <span class="post-id">ID:wMrVbGnH.net</span>
+          </div>
+          <div class="post-body">
+            <p>2017年から続くスレで草</p>
+            <p>結論：金出してメモリ増設しろ</p>
+          </div>
+        </div>
+
+        <div class="post">
+          <div class="post-header">
+            <span class="post-num">93</span>
+            <span>名前：</span>
+            <span class="post-name">login:Penguin</span>
+            <span class="post-time">：2024/08/21(水) 03:17:22<small>.59</small></span>
+            <span class="post-id">ID:cFxDyLpQ.net</span>
+          </div>
+          <div class="post-body">
+            <p><a href="#" class="anchor">&gt;&gt;92</a></p>
+            <p>それが一番の正解だけど、古いマシンでDDR2とか手に入らんこともあるからな</p>
+            <p>ハードウェア的な制約がある場合はソフト側で対応するしかない</p>
+          </div>
+        </div>
+
+        <div class="post">
+          <div class="post-header">
+            <span class="post-num">94</span>
+            <span>名前：</span>
+            <span class="post-name">login:Penguin</span>
+            <span class="post-time">：2024/08/21(水) 11:45:03<small>.77</small></span>
+            <span class="post-id">ID:nBsKpWqT.net</span>
+          </div>
+          <div class="post-body">
+            <p>このスレまだ生きてたのか</p>
+            <p>最近はLibreWolfが軽くておすすめ、Firefoxベースだけどテレメトリ全部切ってあるから少しマシ</p>
+          </div>
+        </div>
+
+      </div><!-- /.posts -->
+
+      <!-- Reply Form -->
+      <div class="reply-form">
+        <div class="reply-form-title">書き込む</div>
+        <table>
+          <tr>
+            <td>名前：</td>
+            <td><input type="text" name="name" placeholder="名無しさん"></td>
+          </tr>
+          <tr>
+            <td>E-mail：</td>
+            <td><input type="text" name="mail" placeholder="sage"></td>
+          </tr>
+          <tr>
+            <td>内容：</td>
+            <td><textarea name="message" placeholder="本文を入力..."></textarea></td>
+          </tr>
+        </table>
+        <div class="reply-form-submit">
+          <button type="button" class="submit-btn">書き込む</button>
+        </div>
+      </div>
+
+      <!-- Bottom Navigation -->
+      <div class="bottom-nav">
+        <a href="#">全部読む</a>
+        <a href="#">最新50</a>
+        <a href="#">1-100</a>
+        <a href="#">板のトップ</a>
+        <a href="#">リロード</a>
+      </div>
+
+    </div><!-- /#view-thread -->
+
+  </div><!-- /#main -->
+</div><!-- /#wrapper -->
+
+</body>
+</html>
